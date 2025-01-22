@@ -19,7 +19,28 @@ resource "aws_subnet" "public" {
   availability_zone       = data.aws_availability_zones.available.names[0]
   map_public_ip_on_launch = true
   tags = {
-    Name                  = "${var.project}-public-subnet"
+    Name                                           = "${var.project}-public-subnet"
+    "kubernetes.io/role/elb"                       = "1"
+    "kubernetes.io/cluster/${var.project}-cluster" = "owned"
+  }
+
+  depends_on             = [
+    aws_vpc.inforiver_vpc
+    ]
+  
+}
+
+# Public Subnet 2
+resource "aws_subnet" "public_1" {
+
+  vpc_id                  = aws_vpc.inforiver_vpc.id
+  cidr_block              = var.publicsb1_cidr
+  availability_zone       = data.aws_availability_zones.available.names[1]
+  map_public_ip_on_launch = true
+  tags = {
+    Name                                           = "${var.project}-public-subnet-2"
+    "kubernetes.io/role/elb"                       = "1"
+    "kubernetes.io/cluster/${var.project}-cluster" = "owned"
   }
 
   depends_on             = [
@@ -159,7 +180,7 @@ resource "aws_route_table_association" "private_internet_access" {
 
 # Subnet grouping for Database.
 resource "aws_db_subnet_group" "mssql_subnet_group" {
-  name                  = "inforivertestdbsubnetgroup"
+  name                  = "inforiverdbsubnetgroup"
   description           = "The RDS-Mssql private subnet group for ${var.project} application ."
   subnet_ids            = [aws_subnet.application.id, aws_subnet.database.id]
 
@@ -211,7 +232,8 @@ resource "aws_security_group" "alb_securitygroup" {
     cidr_blocks      = ["0.0.0.0/0"]
   }  
   tags = {
-    Name               = "${var.project}-Alb-Sg"
+    Name                                           = "${var.project}-Alb-Sg"
+    "kubernetes.io/cluster/${var.project}-cluster" = "owned"
   }  
 
   depends_on           = [
@@ -281,7 +303,8 @@ resource "aws_security_group" "eks_security_group" {
   description         = "EKS created security group applied to ENI that is attached to EKS Control Plane master nodes, as well as any managed workloads."
   vpc_id              = aws_vpc.inforiver_vpc.id
   tags = {
-    Name              = "${var.project}-EKS SecurityGroup"
+    Name                                           = "${var.project}-EKS SecurityGroup"
+    "kubernetes.io/cluster/${var.project}-cluster" = "owned"
   }
 }
 
