@@ -5,7 +5,7 @@ resource "aws_eks_cluster" "inforiver_eks" {
   version                   = "1.30" #Kubernetes version
   enabled_cluster_log_types = ["api", "audit", "authenticator", "controllerManager", "scheduler"]
   vpc_config {
-    subnet_ids              = [aws_subnet.public.id,aws_subnet.application.id,aws_subnet.database.id]
+    subnet_ids              = [aws_subnet.public.id,aws_subnet.service.id,aws_subnet.service_1.id]
     security_group_ids      = [aws_security_group.eks_security_group.id]
     endpoint_private_access = true
     endpoint_public_access  = true
@@ -19,7 +19,7 @@ resource "aws_eks_cluster" "inforiver_eks" {
 
   depends_on                = [
     aws_iam_role_policy_attachment.cluster_AmazonEKSClusterPolicy,
-    aws_vpc.inforiver_vpc,aws_subnet.public,aws_subnet.application,aws_subnet.database,
+    aws_vpc.inforiver_vpc,aws_subnet.public,aws_subnet.service,aws_subnet.service_1,
     aws_security_group.eks_security_group
   ]
 }
@@ -149,6 +149,7 @@ resource "aws_iam_policy" "loadbalancer_controller_policy" {
                 "elasticloadbalancing:DescribeLoadBalancers",
                 "elasticloadbalancing:DescribeLoadBalancerAttributes",
                 "elasticloadbalancing:DescribeListeners",
+                "elasticloadbalancing:DescribeListenerAttributes",
                 "elasticloadbalancing:DescribeListenerCertificates",
                 "elasticloadbalancing:DescribeSSLPolicies",
                 "elasticloadbalancing:DescribeRules",
@@ -424,7 +425,7 @@ resource "aws_eks_node_group" "workernode" {
   cluster_name              = aws_eks_cluster.inforiver_eks.name
   node_group_name           = "${var.project}-nodegroup"
   node_role_arn             = "${aws_iam_role.workernode_role.arn}"
-  subnet_ids                = [aws_subnet.application.id]
+  subnet_ids                = [aws_subnet.service.id]
   ami_type                  = "AL2_x86_64"
   capacity_type             = "ON_DEMAND"
   launch_template{

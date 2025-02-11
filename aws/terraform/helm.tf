@@ -195,6 +195,11 @@ resource "helm_release" "inforiver" {
   } 
 
   set {
+    name  = "loadbalancer.NAME"
+    value = "${var.project}-loadbalancer"
+  } 
+
+  set {
     name  = "role.ROLE_ARN"
     value = aws_iam_role.workernode_role.arn
   } 

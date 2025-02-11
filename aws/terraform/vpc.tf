@@ -49,15 +49,15 @@ resource "aws_subnet" "public_1" {
   
 }
 
-# Application Subnet
-resource "aws_subnet" "application" {
+# Service Subnet
+resource "aws_subnet" "service" {
 
   vpc_id                  = aws_vpc.inforiver_vpc.id
-  cidr_block              = var.applicationsb_cidr
+  cidr_block              = var.servicesb_cidr
   availability_zone       = data.aws_availability_zones.available.names[1]
   map_public_ip_on_launch = false
   tags = {
-    Name                  = "${var.project}-application-subnet"
+    Name                  = "${var.project}-service-subnet"
   }
 
   depends_on              = [
@@ -65,15 +65,15 @@ resource "aws_subnet" "application" {
     ]
 }
 
-# Database Subnet
-resource "aws_subnet" "database" {
+# Service Subnet 2
+resource "aws_subnet" "service_1" {
 
   vpc_id                  = aws_vpc.inforiver_vpc.id
-  cidr_block              = var.databasesb_cidr
+  cidr_block              = var.service1sb_cidr
   availability_zone       = data.aws_availability_zones.available.names[2]
   map_public_ip_on_launch = false
   tags = {
-    Name                  = "${var.project}-database-private-subnet"
+    Name                  = "${var.project}-service-subnet-2"
   }
 
   depends_on              = [
@@ -170,7 +170,7 @@ resource "aws_route_table" "private_rt" {
 
 resource "aws_route_table_association" "private_internet_access" {
 
-  subnet_id             = aws_subnet.application.id
+  subnet_id             = aws_subnet.service.id
   route_table_id        = aws_route_table.private_rt.id
 
   depends_on            = [
@@ -180,13 +180,13 @@ resource "aws_route_table_association" "private_internet_access" {
 
 # Subnet grouping for Database.
 resource "aws_db_subnet_group" "mssql_subnet_group" {
-  name                  = "inforiverdbsubnetgroup"
+  name                  = replace(lower("${var.project}databasesubnetgroup"), "-", "")
   description           = "The RDS-Mssql private subnet group for ${var.project} application ."
-  subnet_ids            = [aws_subnet.application.id, aws_subnet.database.id]
+  subnet_ids            = [aws_subnet.service.id, aws_subnet.service_1.id]
 
   depends_on            = [
-    aws_subnet.database,
-    aws_subnet.application
+    aws_subnet.service_1,
+    aws_subnet.service
     ]
 }
 
@@ -194,10 +194,10 @@ resource "aws_db_subnet_group" "mssql_subnet_group" {
 resource "aws_elasticache_subnet_group" "redis_subnet_group" {
   name                 = "${var.project}-cache-subnet-group"
   description          = "The private redis cache subnet group for ${var.project} application."
-  subnet_ids           = [aws_subnet.application.id, aws_subnet.database.id]
+  subnet_ids           = [aws_subnet.service.id, aws_subnet.service_1.id]
 
   depends_on           = [
-    aws_subnet.database
+    aws_subnet.service_1
     ]
 }
 
@@ -346,7 +346,7 @@ resource "aws_efs_file_system" "inforiver_efs" {
 
 resource "aws_efs_mount_target" "inforiver_efs_mount" {
    file_system_id  = aws_efs_file_system.inforiver_efs.id
-   subnet_id = aws_subnet.application.id
+   subnet_id = aws_subnet.service.id
    security_groups = [aws_security_group.alb_securitygroup.id]
  }
 
